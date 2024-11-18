@@ -13,8 +13,9 @@ const HomePage = ({}: HomePageProps) => {
   const { current: noteService } = useRef(new NoteService());
 
   const handlerCreateNote = () => {
-    const newNoteId = noteService.createNote();
-    navigate(`editor/${newNoteId}`);
+    noteService
+      .createNote()
+      .then(newNoteId => newNoteId && navigate(`editor/${newNoteId}`));
   };
 
   const handleDeleteNote = (noteId: string) => {

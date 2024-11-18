@@ -34,22 +34,30 @@ export default class NoteService {
     return docs.map(doc => doc.id);
   }
 
-  createNote() {
+  async createNote() {
     if (!this.userId) return console.error("No id has founded");
 
     const markdownsCol = collection(this.db, "users", this.userId, "notes");
     const docRef = doc(markdownsCol, crypto.randomUUID());
 
-    setDoc(
-      docRef,
-      {
-        html: "",
-        markdown: ""
-      },
-      { merge: true }
-    );
-
-    return docRef.id;
+    return getDocs(markdownsCol).then(({ docs }) => {
+      if (docs.length < 2) {
+        setDoc(
+          docRef,
+          {
+            html: "",
+            markdown: "",
+            count: docs.length
+          },
+          { merge: true }
+        );
+        return docRef.id;
+      } else {
+        alert(
+          "Unfortunately, this is a sample project and it's not possible to create more than 2 notes :("
+        );
+      }
+    });
   }
 
   updateNote(noteId: string, data: { html: string; markdown: string }) {

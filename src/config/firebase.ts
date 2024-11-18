@@ -1,6 +1,11 @@
 import { getApps, initializeApp } from "firebase/app";
-import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 import { connectAuthEmulator, getAuth } from "firebase/auth";
+import {
+  connectFirestoreEmulator,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager
+} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_API_KEY,
@@ -11,23 +16,16 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_APP_ID
 };
 
-function initialize() {
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const auth = getAuth(app);
+const app = initializeApp(firebaseConfig);
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+});
 
-  return { app, db, auth };
-}
+const auth = getAuth(app);
 
-function connectToEmulators({
-  app,
-  auth,
-  db
-}: {
-  app: any;
-  auth: any;
-  db: any;
-}): {
+function connectToEmulators(): {
   app: any;
   auth: any;
   db: any;
@@ -46,8 +44,8 @@ export default function getFirebase() {
   const existingApp = getApps()[0];
 
   if (existingApp) {
-    return initialize();
+    return { app, db, auth };
   }
 
-  return connectToEmulators(initialize());
+  return connectToEmulators();
 }
