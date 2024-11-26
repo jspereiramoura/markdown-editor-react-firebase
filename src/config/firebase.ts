@@ -1,11 +1,16 @@
-import { getApps, initializeApp } from "firebase/app";
-import { connectAuthEmulator, getAuth } from "firebase/auth";
+import { FirebaseApp, getApps, initializeApp } from "firebase/app";
+import { Auth, connectAuthEmulator, getAuth } from "firebase/auth";
 import {
   connectFirestoreEmulator,
+  Firestore,
   initializeFirestore,
   persistentLocalCache,
   persistentMultipleTabManager
 } from "firebase/firestore";
+
+let auth: Auth;
+let db: Firestore;
+let app: FirebaseApp;
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_API_KEY,
@@ -16,20 +21,26 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_APP_ID
 };
 
-const app = initializeApp(firebaseConfig);
-const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  })
-});
+function initialize() {
+  app ??= initializeApp(firebaseConfig);
+  db ??= initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager()
+    })
+  });
 
-const auth = getAuth(app);
+  auth ??= getAuth(app);
+
+  return { auth, app, db };
+}
 
 function connectToEmulators(): {
   app: any;
   auth: any;
   db: any;
 } {
+  const { app, auth, db } = initialize();
+
   if (location.hostname === "localhost") {
     connectAuthEmulator(auth, "http://localhost:9099", {
       disableWarnings: true
@@ -44,7 +55,7 @@ export default function getFirebase() {
   const existingApp = getApps()[0];
 
   if (existingApp) {
-    return { app, db, auth };
+    return initialize();
   }
 
   return connectToEmulators();
