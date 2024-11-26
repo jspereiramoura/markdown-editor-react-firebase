@@ -4,6 +4,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  increment,
   onSnapshot,
   setDoc,
   updateDoc
@@ -34,6 +35,17 @@ export default class NoteService {
     return docs.map(doc => doc.id);
   }
 
+  async updateNotesLength(n: number) {
+    if (!this.userId) return console.error("No id has founded");
+
+    const userRef = doc(this.db, `users/${this.userId}`);
+    const docData = (await getDoc(userRef)).data();
+
+    (docData?.count ? updateDoc : setDoc)(userRef, {
+      count: increment(n)
+    });
+  }
+
   async createNote() {
     if (!this.userId) return console.error("No id has founded");
 
@@ -42,15 +54,13 @@ export default class NoteService {
 
     return getDocs(markdownsCol).then(({ docs }) => {
       if (docs.length < 2) {
-        setDoc(
-          docRef,
-          {
-            html: "",
-            markdown: "",
-            count: docs.length
-          },
-          { merge: true }
-        );
+        setDoc(docRef, {
+          html: "",
+          markdown: ""
+        }).then(() => {
+          this.updateNotesLength(1);
+        });
+
         return docRef.id;
       } else {
         alert(
@@ -74,7 +84,9 @@ export default class NoteService {
 
   deleteNoteById(id: string) {
     const docRef = doc(this.db, `users/${this.userId}/notes/${id}`);
-    deleteDoc(docRef);
+    deleteDoc(docRef).then(() => {
+      this.updateNotesLength(-1);
+    });
   }
 
   onUserNotesUpdate(fn: (notes: string[]) => void) {
